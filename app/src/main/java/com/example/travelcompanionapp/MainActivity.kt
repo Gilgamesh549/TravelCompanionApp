@@ -67,35 +67,51 @@ class MainActivity : AppCompatActivity() {
     // 4. 核心转换逻辑 (已清除所有错误的引用标记)
     private fun convertValue(sourceUnit: String, destUnit: String, inputValue: Double): String {
 
-        // 验证：防止非温度单位出现负数
         val isTemperature = sourceUnit in listOf("Celsius", "Fahrenheit", "Kelvin")
         if (!isTemperature && inputValue < 0) {
             return "Error: Cannot be negative"
         }
 
-        val key = "$sourceUnit to $destUnit"
+        val result = when {
+            // Currency: convert via USD
+            sourceUnit in listOf("USD", "AUD", "EUR", "JPY", "GBP") &&
+                    destUnit in listOf("USD", "AUD", "EUR", "JPY", "GBP") -> {
 
-        val result = when (key) {
-            // 货币转换
-            "USD to AUD" -> inputValue * 1.55
-            "USD to EUR" -> inputValue * 0.92
-            "USD to JPY" -> inputValue * 148.50
-            "USD to GBP" -> inputValue * 0.78
+                val rates = mapOf(
+                    "USD" to 1.0,
+                    "AUD" to 1.55,
+                    "EUR" to 0.92,
+                    "JPY" to 148.50,
+                    "GBP" to 0.78
+                )
 
-            // 燃油与距离
-            "mpg to km/L" -> inputValue * 0.425
-            "Gallon to Liters" -> inputValue * 3.785
-            "Nautical Mile to Kilometers" -> inputValue * 1.852
+                val usdValue = inputValue / rates[sourceUnit]!!
+                usdValue * rates[destUnit]!!
+            }
 
-            // 温度
-            "Celsius to Fahrenheit" -> (inputValue * 1.8) + 32
-            "Fahrenheit to Celsius" -> (inputValue - 32) / 1.8
-            "Celsius to Kelvin" -> inputValue + 273.15
+            // Fuel efficiency
+            sourceUnit == "mpg" && destUnit == "km/L" -> inputValue * 0.425
+            sourceUnit == "km/L" && destUnit == "mpg" -> inputValue / 0.425
+
+            // Volume
+            sourceUnit == "Gallon" && destUnit == "Liters" -> inputValue * 3.785
+            sourceUnit == "Liters" && destUnit == "Gallon" -> inputValue / 3.785
+
+            // Distance
+            sourceUnit == "Nautical Mile" && destUnit == "Kilometers" -> inputValue * 1.852
+            sourceUnit == "Kilometers" && destUnit == "Nautical Mile" -> inputValue / 1.852
+
+            // Temperature
+            sourceUnit == "Celsius" && destUnit == "Fahrenheit" -> (inputValue * 1.8) + 32
+            sourceUnit == "Fahrenheit" && destUnit == "Celsius" -> (inputValue - 32) / 1.8
+            sourceUnit == "Celsius" && destUnit == "Kelvin" -> inputValue + 273.15
+            sourceUnit == "Kelvin" && destUnit == "Celsius" -> inputValue - 273.15
+            sourceUnit == "Fahrenheit" && destUnit == "Kelvin" -> ((inputValue - 32) / 1.8) + 273.15
+            sourceUnit == "Kelvin" && destUnit == "Fahrenheit" -> ((inputValue - 273.15) * 1.8) + 32
 
             else -> return "Conversion route not supported"
         }
 
-        // 保留两位小数
         return String.format("%.2f", result)
     }
 }
